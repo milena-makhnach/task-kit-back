@@ -1,0 +1,9 @@
+export { authRouter } from './auth.js';
+export { boardRouter } from './board.js';
+export { documentRouter } from './document.js';
+export { photoRouter } from './photo.js';
+export { columnRouter } from './column.js';
+export { taskRouter } from './task.js';
+export { taskUserRouter } from './task_user.js';
+export { commentRouter } from './comment.js';
+export { labelRouter } from './label.js';
