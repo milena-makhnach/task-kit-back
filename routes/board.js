@@ -6,6 +6,7 @@ import {
 	getBoard,
 	removeBoard,
 	updateBoard,
+	deleteUsersFromBoard,
 } from '../controllers/board.js';
 
 export const boardRouter = express.Router();
@@ -15,3 +16,4 @@ boardRouter.get('/board', getBoards);
 boardRouter.get('/board/:id', getBoard);
 boardRouter.delete('/board/:id', removeBoard);
 boardRouter.put('/board/:id', updateBoard);
+boardRouter.post('/board/:id', deleteUsersFromBoard);

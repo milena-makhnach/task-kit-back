@@ -2,6 +2,11 @@ import { Op, literal } from 'sequelize';
 
 import { Column } from '../models/Column.js';
 import { Task } from '../models/Task.js';
+import { Label, TaskLabel } from '../models/Label.js';
+import { User } from '../models/User.js';
+import { Document, TaskDocument } from '../models/Document.js';
+import { Comment } from '../models/Comment.js';
+import { TaskUser } from '../models/TaskUser.js';
 
 export const createColumn = async (req, res) => {
 	const { board_id } = req.params;
@@ -47,10 +52,66 @@ export const getAllColumns = async (req, res) => {
 					const tasks = await Task.findAll({
 						row: true,
 						where: { column_id: id },
+						include: [
+							{
+								model: TaskDocument,
+								include: [
+									{
+										model: Document,
+									},
+								],
+							},
+							{
+								model: TaskUser,
+								include: [
+									{
+										model: User,
+										attributes: {
+											exclude: ['password'],
+										},
+									},
+								],
+							},
+							{
+								model: Comment,
+								include: [
+									{
+										model: User,
+										attributes: {
+											exclude: ['password'],
+										},
+									},
+								],
+							},
+							{
+								model: TaskLabel,
+								include: [
+									{
+										model: Label,
+									},
+								],
+							},
+						],
 						order: [['order', 'ASC']],
 					});
 
-					return { ...column.dataValues, tasks };
+					const mappedTasks = tasks.map((task) => {
+						const {
+							task_documents,
+							task_labels,
+							task_users,
+							...rest
+						} = task.dataValues;
+
+						return {
+							...rest,
+							files: task_documents.map((item) => item.document),
+							labels: task_labels.map((item) => item.label),
+							users: task_users.map((item) => item.user),
+						};
+					});
+
+					return { ...column.dataValues, tasks: mappedTasks };
 				} else {
 					return column;
 				}
@@ -59,6 +120,7 @@ export const getAllColumns = async (req, res) => {
 
 		res.status(200).send(columnsWithTasks);
 	} catch (err) {
+		console.log(err);
 		res.status(400).send({ message: 'Bad request' });
 	}
 };

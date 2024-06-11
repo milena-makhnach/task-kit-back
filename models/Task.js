@@ -21,6 +21,11 @@ export const Task = sql.define(
 			allowNull: true,
 			defaultValue: null,
 		},
+		is_completed: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: false,
+		},
 		bg_color: {
 			type: DataTypes.STRING,
 			allowNull: true,

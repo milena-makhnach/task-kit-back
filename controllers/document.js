@@ -30,7 +30,11 @@ export const uploadTaskDocument = async (req, res) => {
 			document_id: document.id,
 		});
 
-		res.status(201).send({ ...document.dataValues, id: document.id });
+		res.status(201).send({
+			...document.dataValues,
+			id: document.id,
+			task_id,
+		});
 	} catch (err) {
 		console.log(err);
 		res.status(400).send({ message: 'Bad request' });

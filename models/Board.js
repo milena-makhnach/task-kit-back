@@ -21,6 +21,10 @@ export const Board = sql.define(
 			allowNull: true,
 			defaultValue: null,
 		},
+		theme: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
 		photo_id: {
 			type: DataTypes.INTEGER,
 			allowNull: true,
@@ -49,4 +53,4 @@ export const Board = sql.define(
 
 Board.belongsTo(Workspace, { foreignKey: 'workspace_id' });
 Photo.hasOne(Board, { foreignKey: 'photo_id' });
-
+Board.belongsTo(Photo, { foreignKey: 'photo_id' });

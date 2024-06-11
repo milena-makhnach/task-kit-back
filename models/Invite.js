@@ -50,10 +50,13 @@ Invite.belongsTo(Board, {
 });
 Invite.belongsTo(User, {
 	foreignKey: 'invite_user_id',
+	as: 'inviteUser',
 });
 Invite.belongsTo(User, {
 	foreignKey: 'invited_user_id',
+	as: 'invitedUser',
 });
 
 User.hasMany(Invite, { foreignKey: 'invited_user_id' });
 User.hasMany(Invite, { foreignKey: 'invite_user_id' });
+Board.hasMany(Invite, { foreignKey: 'board_id' });

@@ -1,4 +1,4 @@
-import { Sequelize, Op } from 'sequelize';
+import { Sequelize, Op, literal } from 'sequelize';
 import { Invite } from '../models/Invite.js';
 import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
@@ -17,9 +17,62 @@ export const createTask = async (req, res) => {
 	}
 
 	try {
-		const task = await Task.create(taskData);
+		const createdTask = await Task.create(taskData);
 
-		res.status(201).send({ id: task.id, ...task.dataValues });
+		const task = await Task.findByPk(createdTask.id, {
+			include: [
+				{
+					model: TaskDocument,
+					include: [
+						{
+							model: Document,
+						},
+					],
+				},
+				{
+					model: Comment,
+					include: [
+						{
+							model: User,
+							attributes: {
+								exclude: ['password'],
+							},
+						},
+					],
+				},
+				{
+					model: TaskLabel,
+					include: [
+						{
+							model: Label,
+						},
+					],
+				},
+				{
+					model: TaskUser,
+					include: [
+						{
+							model: User,
+							attributes: {
+								exclude: ['password'],
+							},
+						},
+					],
+				},
+			],
+		});
+
+		const { task_documents, task_labels, task_users, ...rest } =
+			task.dataValues;
+
+		const responseData = {
+			...rest,
+			files: task_documents.map((item) => item.document),
+			users: task_users.map((item) => item.user),
+			labels: task_labels.map((item) => item.label),
+		};
+
+		res.status(201).send(responseData);
 	} catch (err) {
 		console.log(err);
 		res.status(400).send({ message: 'Bad request' });
@@ -75,6 +128,9 @@ export const getTask = async (req, res) => {
 					include: [
 						{
 							model: User,
+							attributes: {
+								exclude: ['password'],
+							},
 						},
 					],
 				},
@@ -89,25 +145,35 @@ export const getTask = async (req, res) => {
 			],
 		});
 
-		const users = await User.findAll({
-			include: [
-				{
-					model: Invite,
-					where: {
-						invited_user_id: Sequelize.col('user.id'),
-						board_id: board_id,
-					},
-					attributes: [],
-					required: true,
-				},
-			],
+		const user = await User.findOne({
+			where: { email },
+			attributes: {
+				exclude: ['password'],
+			},
 			raw: true,
 		});
 
-		const user = await User.findOne({ where: { email }, raw: true });
+		const users = await Invite.findAll({
+			where: {
+				board_id,
+			},
+			attributes: [],
+			include: [
+				{
+					model: User,
+					attributes: {
+						exclude: ['password'],
+					},
+				},
+			],
+			raw: true,
+			nest: true,
+		});
+
+		const filteredData = [...users.map((item) => item.user), user];
 
 		const usersWithWorkingField = await Promise.all(
-			[...users, user].map(async (u) => {
+			filteredData.map(async (u) => {
 				const isWorking = await TaskUser.findOne({
 					where: {
 						[Op.and]: [{ user_id: u.id }, { task_id: task_id }],
@@ -118,17 +184,13 @@ export const getTask = async (req, res) => {
 			})
 		);
 
-		const filteredData = usersWithWorkingField.filter(
-			(value, index, self) =>
-				self.findIndex((v) => v.id === value.id) === index
-		);
-
-		const { task_documents, task_labels, ...rest } = task.dataValues;
+		const { task_documents, task_labels, task_users, ...rest } =
+			task.dataValues;
 
 		const responseData = {
 			...rest,
-			files: task_documents.map((td) => td.document),
-			users: filteredData,
+			files: task_documents.map((item) => item.document),
+			users: task_users.map((item) => item.user),
 			labels: task_labels.map((item) => item.label),
 		};
 
@@ -149,7 +211,7 @@ export const removeTask = async (req, res) => {
 
 	try {
 		const taskToDelete = await Task.findByPk(task_id);
-		const taskColumnOrder = taskToDelete.order;
+		const taskColumnOrder = taskToDelete.dataValues.order;
 
 		await Task.destroy({
 			where: { id: task_id },
@@ -164,6 +226,7 @@ export const removeTask = async (req, res) => {
 
 		res.status(200).send({ message: 'Task deleted successfully' });
 	} catch (err) {
+		console.log('DELETE', err);
 		res.status(400).send({ message: 'Bad request' });
 	}
 };
@@ -186,9 +249,60 @@ export const updateTask = async (req, res) => {
 			individualHooks: true,
 		});
 
-		const newTask = await Task.findByPk(task_id);
+		const newTask = await Task.findByPk(task_id, {
+			include: [
+				{
+					model: TaskDocument,
+					include: [
+						{
+							model: Document,
+						},
+					],
+				},
+				{
+					model: Comment,
+					include: [
+						{
+							model: User,
+							attributes: {
+								exclude: ['password'],
+							},
+						},
+					],
+				},
+				{
+					model: TaskLabel,
+					include: [
+						{
+							model: Label,
+						},
+					],
+				},
+				{
+					model: TaskUser,
+					include: [
+						{
+							model: User,
+							attributes: {
+								exclude: ['password'],
+							},
+						},
+					],
+				},
+			],
+		});
 
-		res.status(200).send(newTask);
+		const { task_documents, task_labels, task_users, ...rest } =
+			newTask.dataValues;
+
+		const responseData = {
+			...rest,
+			files: task_documents.map((item) => item.document),
+			users: task_users.map((item) => item.user),
+			labels: task_labels.map((item) => item.label),
+		};
+
+		res.status(200).send(responseData);
 	} catch (err) {
 		console.log(err);
 		res.status(400).send({ message: 'Bad request' });

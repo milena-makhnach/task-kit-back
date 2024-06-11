@@ -1,10 +1,12 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import path from 'path';
 
 import { User } from '../models/User.js';
 import { Workspace, WorkspaceUser } from '../models/Workspace.js';
 import { Invite } from '../models/Invite.js';
 import { mailer } from '../mailer.js';
+import { Document } from '../models/Document.js';
 
 export const register = async (req, res) => {
 	const { password, lastname, firstname, email } = req.body;
@@ -72,7 +74,7 @@ export const login = async (req, res) => {
 		);
 
 		if (!isPasswordCorrect) {
-			return res.status(401).send({
+			return res.status(400).send({
 				message: 'Invalid email or password',
 			});
 		}
@@ -104,6 +106,9 @@ export const getCurrentUser = async (req, res) => {
 
 			const user = await User.findOne({
 				where: { email },
+				attributes: {
+					exclude: ['password'],
+				},
 			});
 
 			if (!user) {
@@ -131,41 +136,68 @@ export const getCurrentUser = async (req, res) => {
 export const updateUser = async (req, res) => {
 	const accessToken = req.cookies['accessToken'];
 	const dataToUpdate = req.body;
+	const file = req.file;
+
+	if (!accessToken) {
+		return res
+			.clearCookie('accessToken')
+			.clearCookie('refreshToken')
+			.status(401)
+			.send({
+				message: 'Unauthorized',
+			});
+	}
 
 	try {
-		if (accessToken) {
-			const { email } = jwt.decode(accessToken);
+		const { email } = jwt.decode(accessToken);
 
-			const user = await User.findOne({
-				where: { email },
+		if (file) {
+			const filePath = path.join(
+				process.cwd(),
+				'public',
+				'files',
+				file.originalname
+			);
+
+			const document = await Document.create({
+				name: file.originalname,
+				file: filePath,
 			});
 
-			if (!user) {
-				return res
-					.clearCookie('accessToken')
-					.clearCookie('refreshToken')
-					.status(403)
-					.send({
-						message: 'User not found',
-					});
-			}
-
-			await User.update(dataToUpdate, { where: { email } });
-
-			const newUser = await User.findOne({
+			await User.update(
+				{
+					...dataToUpdate,
+					avatar: document.id ? document.file : avatar,
+				},
+				{
+					where: { email },
+				}
+			);
+		} else {
+			await User.update(dataToUpdate, {
 				where: { email },
 			});
-
-			const { password: _, ...userData } = newUser.dataValues;
-			return res.status(200).send(userData);
 		}
+
+		const newUser = await User.findOne({
+			where: { email },
+			attributes: {
+				exclude: ['password'],
+			},
+		});
+
+		return res.status(200).send(newUser);
 	} catch (err) {
-		res.clearCookie('accessToken')
-			.clearCookie('refreshToken')
-			.status(403)
-			.send({
-				message: 'User not found',
-			});
+		// res.clearCookie('accessToken')
+		// 	.clearCookie('refreshToken')
+		// 	.status(403)
+		// 	.send({
+		// 		message: 'User not found',
+		// 	});
+		console.log(err);
+		res.status(403).send({
+			message: 'User not found',
+		});
 	}
 };
 
@@ -188,7 +220,7 @@ export const inviteUser = async (req, res) => {
 		const invitingUser = await User.findByPk(user_id);
 
 		if (!invitingUser) {
-			return res.status(404).json({ error: 'User not found' });
+			return res.status(401).json({ error: 'Unauthorized' });
 		}
 
 		const invitation = await Invite.create({
@@ -196,6 +228,11 @@ export const inviteUser = async (req, res) => {
 			invite_user_id: user_id,
 			board_id,
 		});
+
+		const inviteToken = jwt.sign(
+			{ email, board_id, invite_id: invitation.id },
+			process.env.INVITE_SECRET_KEY
+		);
 
 		const mailOptions = {
 			from: invitingUser.dataValues.email,
@@ -206,7 +243,7 @@ export const inviteUser = async (req, res) => {
 			Вы были приглашены в доску. Перейти по ссылке:
 			<a
 				href="
-					${process.env.API_LINK}/api/auth/invite/${invitation.id}
+					${process.env.CLIENT_API}/verification/${inviteToken}
 				">
 				Ссылка
 			</a>
@@ -227,7 +264,7 @@ export const inviteUser = async (req, res) => {
 		res.status(201).json({
 			id: invitation.id,
 			...invitation.dataValues,
-			url: `${process.env.API_LINK}/api/auth/invite/${invitation.id}`,
+			code: inviteToken,
 		});
 	} catch (error) {
 		console.error(error);
@@ -236,22 +273,29 @@ export const inviteUser = async (req, res) => {
 };
 
 export const checkForInvite = async (req, res) => {
-	const { invite_id } = req.params;
-
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
+	const { invite_token } = req.params;
 
 	try {
-		const invite = await Invite.findByPk(invite_id);
+		const decodedToken = jwt.decode(invite_token);
+
+		const invite = await Invite.findByPk(decodedToken.invite_id);
 
 		const invitedUser = await User.findOne({
 			where: { email: invite.dataValues.email },
 		});
 
 		if (invitedUser) {
+			await Invite.update(
+				{ invited_user_id: invitedUser.id },
+				{
+					where: {
+						id: invite.id,
+					},
+				}
+			);
+
+			await Work;
+
 			const accessToken = jwt.sign(
 				{ email: invite.dataValues.email },
 				process.env.TOKEN_SECRET_KEY,
@@ -267,18 +311,21 @@ export const checkForInvite = async (req, res) => {
 					expiresIn: '1d',
 				}
 			);
+
 			return res
 				.cookie('refreshToken', refreshToken, { httpOnly: true })
 				.cookie('accessToken', accessToken, { httpOnly: true })
 				.status(200)
-				.redirect(
-					`http://localhost:3000/board/${invite.dataValues.board_id}`
-				);
+				.json({
+					board_id: invite.dataValues.board_id,
+				});
 		}
 
-		res.status(401).json({
-			error: 'Unauthenticated',
-		});
+		res.status(401)
+			.json({
+				error: 'Unauthenticated',
+			})
+			.redirect(`${process.env.CLIENT_API}/register`);
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ error: 'Internal Server Error' });
