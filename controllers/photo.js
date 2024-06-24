@@ -2,11 +2,6 @@ import { Photo } from '../models/Photo.js';
 
 export const postPhoto = async (req, res) => {
 	const { file, alt_desc } = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const photo = await Photo.create({

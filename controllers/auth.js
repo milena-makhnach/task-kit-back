@@ -33,11 +33,11 @@ export const register = async (req, res) => {
 			user_id: user.id,
 		});
 
-		const accessToken = jwt.sign({ email }, process.env.TOKEN_SECRET_KEY, {
-			expiresIn: '12h',
+		const accessToken = jwt.sign({ email }, process.env.JWT_ACCESS_KEY, {
+			expiresIn: '1h',
 		});
 
-		const refreshToken = jwt.sign({ email }, process.env.TOKEN_SECRET_KEY, {
+		const refreshToken = jwt.sign({ email }, process.env.JWT_REFRESH_KEY, {
 			expiresIn: '1d',
 		});
 
@@ -79,10 +79,10 @@ export const login = async (req, res) => {
 			});
 		}
 
-		const accessToken = jwt.sign({ email }, process.env.TOKEN_SECRET_KEY, {
+		const accessToken = jwt.sign({ email }, process.env.JWT_ACCESS_KEY, {
 			expiresIn: '1h',
 		});
-		const refreshToken = jwt.sign({ email }, process.env.TOKEN_SECRET_KEY, {
+		const refreshToken = jwt.sign({ email }, process.env.JWT_REFRESH_KEY, {
 			expiresIn: '1d',
 		});
 
@@ -94,6 +94,49 @@ export const login = async (req, res) => {
 			.send(userData);
 	} catch (err) {
 		res.status(400).send({ message: 'Bad request' });
+	}
+};
+
+export const refresh = (req, res) => {
+	const refreshToken = req.cookies.refreshToken;
+	const accessToken = req.cookies.accessToken;
+
+	if (accessToken) {
+		jwt.verify(
+			refreshToken,
+			process.env.JWT_REFRESH_KEY,
+			(err, decoded) => {
+				if (err) {
+					return res.status(401).json({ message: 'Unauthorized' });
+				} else {
+					const accessToken = jwt.sign(
+						{ email: decoded.email },
+						process.env.JWT_ACCESS_KEY,
+						{
+							expiresIn: '1h',
+						}
+					);
+
+					const refreshToken = jwt.sign(
+						{ email: decoded.email },
+						process.env.JWT_REFRESH_KEY,
+						{
+							expiresIn: '1d',
+						}
+					);
+
+					return res
+						.cookie('refreshToken', refreshToken, {
+							httpOnly: true,
+						})
+						.cookie('accessToken', accessToken, { httpOnly: true })
+						.status(200)
+						.send();
+				}
+			}
+		);
+	} else {
+		return res.status(401).json({ message: 'Unauthorized' });
 	}
 };
 

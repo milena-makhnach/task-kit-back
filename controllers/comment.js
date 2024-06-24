@@ -4,12 +4,6 @@ import { User } from '../models/User.js';
 export const createComment = async (req, res) => {
 	const data = req.body;
 
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	try {
 		const comment = await Comment.create(data);
 
@@ -27,12 +21,6 @@ export const createComment = async (req, res) => {
 export const updateComment = async (req, res) => {
 	const comment = req.body;
 	const { id } = req.params;
-
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Comment.update(comment, {
@@ -61,12 +49,6 @@ export const updateComment = async (req, res) => {
 
 export const deleteComment = async (req, res) => {
 	const { id } = req.params;
-
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Comment.destroy({ where: { id } });

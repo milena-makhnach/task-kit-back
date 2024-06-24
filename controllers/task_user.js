@@ -5,11 +5,6 @@ import { TaskUser } from '../models/TaskUser.js';
 
 export const createUserTask = async (req, res) => {
 	const { user_id, task_id } = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await TaskUser.create({
@@ -26,11 +21,6 @@ export const createUserTask = async (req, res) => {
 
 export const removeUserTask = async (req, res) => {
 	const { user_id, task_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await TaskUser.destroy({

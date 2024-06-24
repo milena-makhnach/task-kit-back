@@ -5,9 +5,10 @@ import {
 	deleteComment,
 	updateComment,
 } from '../controllers/comment.js';
+import { verifyToken } from '../middleware/verify-token.js';
 
 export const commentRouter = express.Router();
 
-commentRouter.post('/comment', createComment);
-commentRouter.delete('/comment/:id', deleteComment);
-commentRouter.patch('/comment/:id', updateComment);
+commentRouter.post('/comment', verifyToken, createComment);
+commentRouter.delete('/comment/:id', verifyToken, deleteComment);
+commentRouter.patch('/comment/:id', verifyToken, updateComment);

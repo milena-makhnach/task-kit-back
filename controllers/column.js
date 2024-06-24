@@ -11,11 +11,6 @@ import { TaskUser } from '../models/TaskUser.js';
 export const createColumn = async (req, res) => {
 	const { board_id } = req.params;
 	const { name, order } = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const column = await Column.create({
@@ -32,11 +27,6 @@ export const createColumn = async (req, res) => {
 
 export const getAllColumns = async (req, res) => {
 	const { board_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const columns = await Column.findAll({
@@ -127,11 +117,6 @@ export const getAllColumns = async (req, res) => {
 
 export const removeColumn = async (req, res) => {
 	const { column_id, board_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const columnToDelete = await Column.findByPk(column_id);
@@ -158,11 +143,6 @@ export const removeColumn = async (req, res) => {
 export const updateColumn = async (req, res) => {
 	const { board_id, column_id } = req.params;
 	const dataToUpdate = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Column.update(dataToUpdate, {

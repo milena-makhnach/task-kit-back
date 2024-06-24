@@ -8,12 +8,13 @@ import {
 	updateBoard,
 	deleteUsersFromBoard,
 } from '../controllers/board.js';
+import { verifyToken } from '../middleware/verify-token.js';
 
 export const boardRouter = express.Router();
 
-boardRouter.post('/board', createBoard);
-boardRouter.get('/board', getBoards);
-boardRouter.get('/board/:id', getBoard);
-boardRouter.delete('/board/:id', removeBoard);
-boardRouter.put('/board/:id', updateBoard);
-boardRouter.post('/board/:id', deleteUsersFromBoard);
+boardRouter.post('/board', verifyToken, createBoard);
+boardRouter.get('/board', verifyToken, getBoards);
+boardRouter.get('/board/:id', verifyToken, getBoard);
+boardRouter.delete('/board/:id', verifyToken, removeBoard);
+boardRouter.put('/board/:id', verifyToken, updateBoard);
+boardRouter.post('/board/:id', verifyToken, deleteUsersFromBoard);

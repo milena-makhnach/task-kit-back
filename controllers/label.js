@@ -4,15 +4,6 @@ import { Label, TaskLabel } from '../models/Label.js';
 
 export const setTaskLabel = async (req, res) => {
 	const { task_id, label_id } = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await TaskLabel.create({ task_id, label_id });
@@ -26,15 +17,6 @@ export const setTaskLabel = async (req, res) => {
 
 export const removeTaskLable = async (req, res) => {
 	const { task_id, label_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await TaskLabel.destroy({
@@ -50,15 +32,6 @@ export const removeTaskLable = async (req, res) => {
 
 export const createLabel = async (req, res) => {
 	const label = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const newLabel = await Label.create(label);
@@ -97,16 +70,7 @@ export const deleteLabel = async (req, res) => {
 export const updateLabel = async (req, res) => {
 	const label = req.body;
 	const { id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
+	
 	try {
 		const updatedLabel = await Label.update(label, {
 			where: { id },

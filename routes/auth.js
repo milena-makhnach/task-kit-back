@@ -7,6 +7,7 @@ import {
 	updateUser,
 	inviteUser,
 	checkForInvite,
+	refresh,
 } from '../controllers/auth.js';
 import express from 'express';
 
@@ -16,6 +17,7 @@ const upload = multer();
 
 authRouter.post('/register', register);
 authRouter.post('/login', login);
+authRouter.post('/refresh', refresh);
 authRouter.post('/invite', inviteUser);
 authRouter.post('/logout', logout);
 authRouter.get('/user', getCurrentUser);

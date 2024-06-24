@@ -6,12 +6,6 @@ export const uploadTaskDocument = async (req, res) => {
 	const file = req.file;
 	const { task_id } = req.body;
 
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	try {
 		const filePath = path.join(
 			process.cwd(),
@@ -45,12 +39,6 @@ export const uploadCommentDocument = async (req, res) => {
 	const file = req.file;
 	const { comment_id } = req.body;
 
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	try {
 		const filePath = path.join(
 			process.cwd(),
@@ -80,12 +68,6 @@ export const uploadCommentDocument = async (req, res) => {
 
 export const deleteDocument = async (req, res) => {
 	const { id } = req.params;
-
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Document.destroy({ where: { id } });

@@ -11,21 +11,14 @@ import { TaskUser } from '../models/TaskUser.js';
 
 export const createBoard = async (req, res) => {
 	const board = req.body;
-	const accessToken = req.cookies['accessToken'];
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	const user = await User.findOne({
-		where: { email },
+		where: { email: req.body.email },
 		attributes: {
 			exclude: ['password'],
 		},
 	});
+
 	const workspaceByUser = await WorkspaceUser.findOne({
 		where: {
 			user_id: user.id,
@@ -75,18 +68,9 @@ export const createBoard = async (req, res) => {
 };
 
 export const getBoards = async (req, res) => {
-	const accessToken = req.cookies['accessToken'];
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	const user = await User.findOne({
 		where: {
-			email,
+			email: req.body.email,
 		},
 		attributes: {
 			exclude: ['password'],
@@ -204,17 +188,8 @@ export const getBoards = async (req, res) => {
 export const getBoard = async (req, res) => {
 	const { id } = req.params;
 
-	const accessToken = req.cookies['accessToken'];
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	const user = await User.findOne({
-		where: { email },
+		where: { email: req.body.email },
 		attributes: {
 			exclude: ['password'],
 		},
@@ -292,13 +267,11 @@ export const getBoard = async (req, res) => {
 			});
 		}
 
-		return res
-			.status(200)
-			.send({
-				...boardData,
-				photo: null,
-				users: !!users.length ? users : [user],
-			});
+		return res.status(200).send({
+			...boardData,
+			photo: null,
+			users: !!users.length ? users : [user],
+		});
 	} catch (e) {
 		console.log(e);
 		res.status(400).send({ message: e.message });
@@ -309,17 +282,8 @@ export const updateBoard = async (req, res) => {
 	const { id } = req.params;
 	const dataToUpdate = req.body;
 
-	const accessToken = req.cookies['accessToken'];
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
 	const user = await User.findOne({
-		where: { email },
+		where: { email: req.body.email },
 		attributes: { exclude: ['password'] },
 	});
 
@@ -344,8 +308,6 @@ export const updateBoard = async (req, res) => {
 
 		res.status(200).send(updatedBoard);
 	} catch (e) {
-		console.log(e);
-
 		res.status(400).send({ message: e.message });
 	}
 };
@@ -353,11 +315,6 @@ export const updateBoard = async (req, res) => {
 export const deleteUsersFromBoard = async (req, res) => {
 	const { id } = req.params;
 	const data = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Invite.destroy({
@@ -383,16 +340,7 @@ export const deleteUsersFromBoard = async (req, res) => {
 export const removeBoard = async (req, res) => {
 	const { id } = req.params;
 
-	const accessToken = req.cookies['accessToken'];
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
-
-	const user = await User.findOne({ where: { email } });
+	const user = await User.findOne({ where: { email: req.body.email } });
 
 	const workspace = await Workspace.findOne({ user_id: user.id });
 

@@ -10,11 +10,6 @@ import { Label, TaskLabel } from '../models/Label.js';
 
 export const createTask = async (req, res) => {
 	const taskData = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const createdTask = await Task.create(taskData);
@@ -81,11 +76,6 @@ export const createTask = async (req, res) => {
 
 export const getAllTask = async (req, res) => {
 	const { column_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const tasks = await Task.findAll({
@@ -102,15 +92,6 @@ export const getAllTask = async (req, res) => {
 
 export const getTask = async (req, res) => {
 	const { task_id, board_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	let email;
-
-	if (accessToken) {
-		email = jwt.decode(accessToken).email;
-	} else {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const task = await Task.findByPk(task_id, {
@@ -146,7 +127,7 @@ export const getTask = async (req, res) => {
 		});
 
 		const user = await User.findOne({
-			where: { email },
+			where: { email: req.body.email },
 			attributes: {
 				exclude: ['password'],
 			},
@@ -203,11 +184,6 @@ export const getTask = async (req, res) => {
 
 export const removeTask = async (req, res) => {
 	const { task_id } = req.params;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		const taskToDelete = await Task.findByPk(task_id);
@@ -234,11 +210,6 @@ export const removeTask = async (req, res) => {
 export const updateTask = async (req, res) => {
 	const { task_id } = req.params;
 	const dataToUpdate = req.body;
-	const accessToken = req.cookies['accessToken'];
-
-	if (!accessToken) {
-		return res.status(401).send({ message: 'Unauthorazed' });
-	}
 
 	try {
 		await Task.update(dataToUpdate, {
